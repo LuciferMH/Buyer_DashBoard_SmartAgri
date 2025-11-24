@@ -236,12 +236,20 @@ function BuyerDashboard() {
           <main className="flex-1 min-w-0">
             {currentView === 'shop' && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white">
-                  <h2 className="text-3xl font-bold mb-2">Fresh From Farm</h2>
-                  <p className="text-green-100 mb-4">Get the freshest vegetables delivered to your doorstep</p>
-                  <button className="bg-white text-green-600 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition">
-                    Shop Now
-                  </button>
+                <div className="relative rounded-2xl overflow-hidden h-64">
+                  <img
+                    src="https://images.pexels.com/photos/1300972/pexels-photo-1300972.jpeg"
+                    alt="Fresh vegetables"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
+                  <div className="relative h-full flex flex-col justify-center p-8 text-white">
+                    <h2 className="text-3xl font-bold mb-2">Fresh From Farm</h2>
+                    <p className="text-gray-100 mb-4">Get the freshest vegetables delivered to your doorstep</p>
+                    <button className="bg-white text-green-600 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition w-fit">
+                      Shop Now
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6">

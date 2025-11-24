@@ -74,16 +74,6 @@ function Sidebar({ currentView, setCurrentView, showMobileMenu, setShowMobileMen
             );
           })}
         </nav>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
-            <h4 className="font-bold text-gray-900 mb-2">Special Offer!</h4>
-            <p className="text-sm text-gray-600 mb-3">Get 20% off on orders above $50</p>
-            <button className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
-              Learn More
-            </button>
-          </div>
-        </div>
       </aside>
     </>
   );
