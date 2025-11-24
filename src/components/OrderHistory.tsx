@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase, Order, OrderItem } from '../lib/supabase';
+import { Order, OrderItem, mockProducts } from '../lib/supabase';
 import { Package, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface OrderHistoryProps {
@@ -16,41 +16,19 @@ function OrderHistory({ buyerId }: OrderHistoryProps) {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('buyer_id', buyerId)
-        .order('created_at', { ascending: false });
+  const fetchOrders = () => {
+    setTimeout(() => {
+      const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const buyerOrders = allOrders.filter((order: Order) => order.buyer_id === buyerId);
+      setOrders(buyerOrders);
 
-      if (ordersError) throw ordersError;
-
-      if (ordersData) {
-        setOrders(ordersData);
-
-        const itemsPromises = ordersData.map(async (order) => {
-          const { data, error } = await supabase
-            .from('order_items')
-            .select('*, product:products(*)')
-            .eq('order_id', order.id);
-
-          if (error) throw error;
-          return { orderId: order.id, items: data || [] };
-        });
-
-        const itemsResults = await Promise.all(itemsPromises);
-        const itemsMap: { [key: string]: OrderItem[] } = {};
-        itemsResults.forEach(result => {
-          itemsMap[result.orderId] = result.items;
-        });
-        setOrderItems(itemsMap);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
+      const itemsMap: { [key: string]: OrderItem[] } = {};
+      buyerOrders.forEach((order: Order) => {
+        itemsMap[order.id] = [];
+      });
+      setOrderItems(itemsMap);
       setLoading(false);
-    }
+    }, 300);
   };
 
   const toggleOrderExpansion = (orderId: string) => {

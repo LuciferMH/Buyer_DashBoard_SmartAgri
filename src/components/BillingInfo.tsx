@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { CreditCard, MapPin, Phone, Mail, User, Save } from 'lucide-react';
 
 interface BuyerProfile {
@@ -34,69 +33,25 @@ function BillingInfo({ buyerId }: BillingInfoProps) {
     fetchProfile();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('buyer_profiles')
-        .select('*')
-        .eq('user_id', buyerId)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data) {
-        setProfile(data);
+  const fetchProfile = () => {
+    setTimeout(() => {
+      const savedProfile = localStorage.getItem(`profile_${buyerId}`);
+      if (savedProfile) {
+        setProfile(JSON.parse(savedProfile));
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
       setLoading(false);
-    }
+    }, 300);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setSaving(true);
     setMessage('');
 
-    try {
-      if (profile.id) {
-        const { error } = await supabase
-          .from('buyer_profiles')
-          .update({
-            full_name: profile.full_name,
-            email: profile.email,
-            phone: profile.phone,
-            address: profile.address,
-            city: profile.city,
-            postal_code: profile.postal_code,
-          })
-          .eq('id', profile.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('buyer_profiles')
-          .insert({
-            user_id: buyerId,
-            full_name: profile.full_name,
-            email: profile.email,
-            phone: profile.phone,
-            address: profile.address,
-            city: profile.city,
-            postal_code: profile.postal_code,
-          });
-
-        if (error) throw error;
-      }
-
+    setTimeout(() => {
+      localStorage.setItem(`profile_${buyerId}`, JSON.stringify(profile));
       setMessage('Profile updated successfully!');
-      await fetchProfile();
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      setMessage('Failed to update profile. Please try again.');
-    } finally {
       setSaving(false);
-    }
+    }, 500);
   };
 
   const handleChange = (field: keyof BuyerProfile, value: string) => {

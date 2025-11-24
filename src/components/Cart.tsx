@@ -1,6 +1,5 @@
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { CartItem } from '../lib/supabase';
-import { supabase } from '../lib/supabase';
 import { useState } from 'react';
 
 interface CartProps {
@@ -28,7 +27,7 @@ function Cart({
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!deliveryAddress.trim()) {
       alert('Please enter a delivery address');
       return;
@@ -41,51 +40,30 @@ function Cart({
 
     setIsProcessing(true);
 
-    try {
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          buyer_id: buyerId,
-          total_amount: cartTotal,
-          status: 'pending',
-          delivery_address: deliveryAddress,
-          payment_method: paymentMethod,
-        })
-        .select()
-        .single();
+    setTimeout(() => {
+      const order = {
+        id: `order_${Date.now()}`,
+        buyer_id: buyerId,
+        total_amount: cartTotal,
+        status: 'pending',
+        delivery_address: deliveryAddress,
+        payment_method: paymentMethod,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      if (orderError) throw orderError;
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      orders.push(order);
+      localStorage.setItem('orders', JSON.stringify(orders));
 
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price_at_purchase: item.product?.price || 0,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      const { error: deleteError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('buyer_id', buyerId);
-
-      if (deleteError) throw deleteError;
+      localStorage.removeItem(`cart_${buyerId}`);
 
       alert('Order placed successfully!');
       setDeliveryAddress('');
       setShowCart(false);
       onOrderComplete();
-    } catch (error) {
-      console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
-    } finally {
       setIsProcessing(false);
-    }
+    }, 500);
   };
 
   if (!showCart) return null;

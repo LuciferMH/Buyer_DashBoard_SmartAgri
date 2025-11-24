@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, Product, CartItem } from '../lib/supabase';
+import { Product, CartItem, mockProducts } from '../lib/supabase';
 import { ShoppingCart, Search, Filter, Menu, X, User, Package, Heart, TrendingUp } from 'lucide-react';
 import ProductGrid from './ProductGrid';
 import Cart from './Cart';
@@ -33,39 +33,20 @@ function BuyerDashboard() {
     filterProducts();
   }, [products, searchQuery, selectedCategory, priceRange]);
 
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        setProducts(data);
-        const max = Math.max(...data.map(p => p.price));
-        setMaxPrice(Math.ceil(max));
-        setPriceRange([0, Math.ceil(max)]);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
+  const fetchProducts = () => {
+    setTimeout(() => {
+      setProducts(mockProducts);
+      const max = Math.max(...mockProducts.map(p => p.price));
+      setMaxPrice(Math.ceil(max));
+      setPriceRange([0, Math.ceil(max)]);
       setLoading(false);
-    }
+    }, 300);
   };
 
-  const fetchCartItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cart_items')
-        .select('*, product:products(*)')
-        .eq('buyer_id', buyerId);
-
-      if (error) throw error;
-      if (data) setCartItems(data);
-    } catch (error) {
-      console.error('Error fetching cart:', error);
+  const fetchCartItems = () => {
+    const savedCart = localStorage.getItem(`cart_${buyerId}`);
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
     }
   };
 
@@ -88,62 +69,54 @@ function BuyerDashboard() {
     setFilteredProducts(filtered);
   };
 
-  const addToCart = async (productId: string) => {
-    try {
-      const existingItem = cartItems.find(item => item.product_id === productId);
+  const addToCart = (productId: string) => {
+    const product = mockProducts.find(p => p.id === productId);
+    if (!product) return;
 
-      if (existingItem) {
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + 1 })
-          .eq('id', existingItem.id);
+    const existingItem = cartItems.find(item => item.product_id === productId);
+    let updatedCart: CartItem[];
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('cart_items')
-          .insert({ buyer_id: buyerId, product_id: productId, quantity: 1 });
-
-        if (error) throw error;
-      }
-
-      await fetchCartItems();
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    if (existingItem) {
+      updatedCart = cartItems.map(item =>
+        item.product_id === productId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+    } else {
+      updatedCart = [
+        ...cartItems,
+        {
+          id: `cart_${Date.now()}`,
+          buyer_id: buyerId,
+          product_id: productId,
+          quantity: 1,
+          product,
+        },
+      ];
     }
+
+    setCartItems(updatedCart);
+    localStorage.setItem(`cart_${buyerId}`, JSON.stringify(updatedCart));
   };
 
-  const updateCartQuantity = async (itemId: string, quantity: number) => {
+  const updateCartQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
-      await removeFromCart(itemId);
+      removeFromCart(itemId);
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ quantity })
-        .eq('id', itemId);
+    const updatedCart = cartItems.map(item =>
+      item.id === itemId ? { ...item, quantity } : item
+    );
 
-      if (error) throw error;
-      await fetchCartItems();
-    } catch (error) {
-      console.error('Error updating cart:', error);
-    }
+    setCartItems(updatedCart);
+    localStorage.setItem(`cart_${buyerId}`, JSON.stringify(updatedCart));
   };
 
-  const removeFromCart = async (itemId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-      await fetchCartItems();
-    } catch (error) {
-      console.error('Error removing from cart:', error);
-    }
+  const removeFromCart = (itemId: string) => {
+    const updatedCart = cartItems.filter(item => item.id !== itemId);
+    setCartItems(updatedCart);
+    localStorage.setItem(`cart_${buyerId}`, JSON.stringify(updatedCart));
   };
 
   const cartTotal = cartItems.reduce((sum, item) => {
